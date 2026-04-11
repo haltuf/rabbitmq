@@ -1,0 +1,11 @@
+/vendor/
+/composer.lock
+/temp/
+/.phpunit.result.cache
+/.phpunit.cache/
+/tests/**/*.actual
+/tests/**/*.expected
+/tests/**/output/
+.idea/
+.vscode/
+.DS_Store

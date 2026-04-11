@@ -235,7 +235,13 @@ Ve všech souborech najdi a nahraď:
 +use Haltuf\RabbitMQ\
 ```
 
-Typicky půjde jen o consumer handlery, kde jsi importoval `IConsumer` konstanty. Ostatní místa (DI container, producer publish, atd.) jsou namespace-agnostická.
+Rename se týká **všech souborů, které importují jakoukoli třídu nebo konstantu z `Contributte\RabbitMQ\`** — typicky consumer handlery (`IConsumer` konstanty), ale i služby, presentery a event dispatchery, které mají typovaný `Client` pro publikování zpráv. V reálném Nette projektu střední velikosti jde řádově o **10–15 souborů**. Najdi všechny výskyty:
+
+```bash
+grep -rlF 'use Contributte\RabbitMQ' app/ src/ bin/
+```
+
+DI container konfigurace (`config.neon`) a runtime publish volání přes `$client->getProducer('name')->publish(...)` jsou namespace-agnostická a žádné změny nevyžadují.
 
 ### Drobné rozdíly
 

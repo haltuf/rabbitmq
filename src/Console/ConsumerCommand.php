@@ -9,6 +9,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use UnexpectedValueException;
 
 #[AsCommand(name: 'rabbitmq:consumer', description: 'Run a RabbitMQ consumer')]
 final class ConsumerCommand extends Command
@@ -28,11 +29,17 @@ final class ConsumerCommand extends Command
 
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
-		$consumerName = (string) $input->getArgument('consumerName');
+		$consumerName = $input->getArgument('consumerName');
+		if (!is_string($consumerName)) {
+			throw new UnexpectedValueException('Argument [consumerName] must be a string');
+		}
 		$this->validateConsumer($consumerName);
 
 		$secondsToLive = $input->getArgument('secondsToLive');
 		if ($secondsToLive !== null) {
+			if (!is_numeric($secondsToLive)) {
+				throw new UnexpectedValueException('Argument [secondsToLive] must be numeric');
+			}
 			$secondsToLive = (int) $secondsToLive;
 			if ($secondsToLive <= 0) {
 				throw new InvalidArgumentException('Parameter [secondsToLive] has to be greater than 0');

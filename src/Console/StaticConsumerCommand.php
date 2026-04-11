@@ -9,6 +9,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use UnexpectedValueException;
 
 #[AsCommand(name: 'rabbitmq:staticConsumer', description: 'Run a RabbitMQ consumer but consume just particular amount of messages')]
 final class StaticConsumerCommand extends Command
@@ -28,10 +29,17 @@ final class StaticConsumerCommand extends Command
 
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
-		$consumerName = (string) $input->getArgument('consumerName');
+		$consumerName = $input->getArgument('consumerName');
+		if (!is_string($consumerName)) {
+			throw new UnexpectedValueException('Argument [consumerName] must be a string');
+		}
 		$this->validateConsumer($consumerName);
 
-		$amountOfMessages = (int) $input->getArgument('amountOfMessages');
+		$amountOfMessages = $input->getArgument('amountOfMessages');
+		if (!is_numeric($amountOfMessages)) {
+			throw new UnexpectedValueException('Argument [amountOfMessages] must be numeric');
+		}
+		$amountOfMessages = (int) $amountOfMessages;
 		if ($amountOfMessages <= 0) {
 			throw new InvalidArgumentException('Parameter [amountOfMessages] has to be greater than 0');
 		}

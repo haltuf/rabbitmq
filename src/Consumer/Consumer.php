@@ -6,6 +6,7 @@ use Haltuf\RabbitMQ\Connection\Connection;
 use InvalidArgumentException;
 use PhpAmqpLib\Exception\AMQPTimeoutException;
 use PhpAmqpLib\Message\AMQPMessage;
+use PhpAmqpLib\Wire\AMQPTable;
 
 class Consumer
 {
@@ -83,7 +84,10 @@ class Consumer
 	{
 		$headers = [];
 		if ($amqpMessage->has('application_headers')) {
-			$headers = $amqpMessage->get('application_headers')->getNativeData();
+			$appHeaders = $amqpMessage->get('application_headers');
+			if ($appHeaders instanceof AMQPTable) {
+				$headers = $appHeaders->getNativeData();
+			}
 		}
 
 		return new Message(

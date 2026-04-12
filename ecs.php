@@ -2,7 +2,7 @@
 
 use PhpCsFixer\Fixer\CastNotation\ModernizeTypesCastingFixer;
 use PhpCsFixer\Fixer\ClassNotation\ClassAttributesSeparationFixer;
-use PhpCsFixer\Fixer\Comment\SingleLineCommentStyleFixer;
+use PhpCsFixer\Fixer\ControlStructure\TrailingCommaInMultilineFixer;
 use PhpCsFixer\Fixer\FunctionNotation\VoidReturnFixer;
 use PhpCsFixer\Fixer\Import\FullyQualifiedStrictTypesFixer;
 use PhpCsFixer\Fixer\Import\GlobalNamespaceImportFixer;
@@ -13,6 +13,8 @@ use PhpCsFixer\Fixer\Import\OrderedImportsFixer;
 use PhpCsFixer\Fixer\Import\SingleImportPerStatementFixer;
 use PhpCsFixer\Fixer\LanguageConstruct\DeclareEqualNormalizeFixer;
 use PhpCsFixer\Fixer\Operator\StandardizeNotEqualsFixer;
+use PhpCsFixer\Fixer\Phpdoc\NoEmptyPhpdocFixer;
+use PhpCsFixer\Fixer\Phpdoc\NoSuperfluousPhpdocTagsFixer;
 use PhpCsFixer\Fixer\PhpTag\BlankLineAfterOpeningTagFixer;
 use PhpCsFixer\Fixer\Strict\DeclareStrictTypesFixer;
 use PhpCsFixer\Fixer\Strict\StrictComparisonFixer;
@@ -38,12 +40,16 @@ return ECSConfig::configure()
 		VoidReturnFixer::class,
 		ModernizeTypesCastingFixer::class,
 		DeclareEqualNormalizeFixer::class,
+		NoEmptyPhpdocFixer::class,
 	])
 	->withConfiguredRule(OrderedImportsFixer::class, [
 		'sort_algorithm' => 'alpha',
 	])
-	->withConfiguredRule(SingleLineCommentStyleFixer::class, [
-		'comment_types' => ['hash'],
+	->withConfiguredRule(NoSuperfluousPhpdocTagsFixer::class, [
+		'allow_mixed' => true,
+	])
+	->withConfiguredRule(TrailingCommaInMultilineFixer::class, [
+		'elements' => ['arguments', 'arrays', 'match', 'parameters'],
 	])
 	->withConfiguredRule(FullyQualifiedStrictTypesFixer::class, [
 		'import_symbols' => true,

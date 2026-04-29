@@ -114,6 +114,43 @@ class ProducerTest extends TestCase
 		Assert::notNull($msg);
 		Assert::same('after-reconnect', $msg->getBody());
 	}
+
+	public function testOnPublishCallbackReceivesMessageHeadersAndRoutingKey(): void
+	{
+		$producer = new Producer($this->connection, $this->testQueue);
+
+		/** @var list<array{string, array<string, mixed>, ?string}> $captured */
+		$captured = [];
+		$producer->addOnPublishCallback(
+			function (string $message, array $headers, ?string $routingKey) use (&$captured): void {
+				$captured[] = [$message, $headers, $routingKey];
+			},
+		);
+
+		$producer->publish('payload', ['x-foo' => 'bar'], 'custom-key');
+		$this->connection->getChannel()->queue_delete('custom-key');
+
+		Assert::count(1, $captured);
+		Assert::same('payload', $captured[0][0]);
+		Assert::same(['x-foo' => 'bar'], $captured[0][1]);
+		Assert::same('custom-key', $captured[0][2]);
+	}
+
+	public function testMultipleOnPublishCallbacksAreInvokedInOrder(): void
+	{
+		$producer = new Producer($this->connection, $this->testQueue);
+		$calls = [];
+		$producer->addOnPublishCallback(function () use (&$calls): void {
+			$calls[] = 'first';
+		});
+		$producer->addOnPublishCallback(function () use (&$calls): void {
+			$calls[] = 'second';
+		});
+
+		$producer->publish('a');
+
+		Assert::same(['first', 'second'], $calls);
+	}
 }
 
 (new ProducerTest())->run();

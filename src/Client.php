@@ -20,4 +20,10 @@ final class Client
 
 		return $this->producers[$name];
 	}
+
+	/** @return array<string, Producer> */
+	public function getProducers(): array
+	{
+		return $this->producers;
+	}
 }

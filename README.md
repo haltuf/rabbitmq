@@ -19,6 +19,7 @@ Odlehčená RabbitMQ integrace pro [Nette Framework](https://nette.org) postaven
   - [Consumer](#consumer)
   - [BulkConsumer](#bulkconsumer)
 - [Konzolové příkazy](#konzolové-příkazy)
+- [Tracy bar panel](#tracy-bar-panel)
 - [Migrace z contributte/rabbitmq](#migrace-z-contributterabbitmq)
 
 ## Instalace
@@ -204,6 +205,20 @@ Balíček registruje tři Symfony Console příkazy:
 | `rabbitmq:consumer <consumerName> [secondsToLive]` | Spustí consumer; pokud je `secondsToLive` nastaveno, běží max uvedenou dobu |
 | `rabbitmq:staticConsumer <consumerName> <amountOfMessages>` | Spustí consumer a ukončí se po zpracování daného počtu zpráv |
 | `rabbitmq:declareQueuesAndExchanges` | Deklaruje všechny fronty z configu; volá se typicky v deploy pipeline |
+
+## Tracy bar panel
+
+`Haltuf\RabbitMQ\Diagnostics\BarPanel` zobrazuje v Tracy debug baru ikonku, počet odeslaných zpráv a přehled payloadů per producer. Vyžaduje [`tracy/tracy`](https://github.com/nette/tracy) (typicky `composer require --dev tracy/tracy`).
+
+Registrace v `config.neon` (typicky pouze v development konfiguraci):
+
+```neon
+tracy:
+	bar:
+		- Haltuf\RabbitMQ\Diagnostics\BarPanel
+```
+
+Maximální počet zobrazených zpráv lze upravit přes statickou property `BarPanel::$displayCount` (výchozí `100`, hodnota `0` znamená neomezeně).
 
 ## Migrace z `contributte/rabbitmq`
 

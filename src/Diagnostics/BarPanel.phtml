@@ -1,0 +1,42 @@
+<?php declare(strict_types=1); ?>
+<style class="tracy-debug">
+	.tracy-addons-rabbitmq h1 { font-size: 16px !important; }
+	.tracy-addons-rabbitmq table { margin: 5px 0 0; width: 100%; }
+	.tracy-addons-rabbitmq table th, .tracy-addons-rabbitmq table td { padding: 3px 6px; text-align: left; vertical-align: top; }
+	.tracy-addons-rabbitmq pre { margin: 0; white-space: pre-wrap; word-break: break-all; }
+</style>
+
+<div class="tracy-inner tracy-addons-rabbitmq">
+	<h1>RabbitMq, total sent <?= (int) $totalMessages ?></h1>
+
+	<?php if ($displayCount > 0 && $totalMessages > $displayCount): ?>
+		<p>Only first <?= (int) $displayCount ?> messages are displayed.</p>
+	<?php endif ?>
+
+	<div class="tracy-inner-container">
+		<table>
+			<thead>
+				<tr>
+					<th>Producer</th>
+					<th>Messages</th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ($sentMessages as $producer => $messages): ?>
+					<tr>
+						<th><?= htmlspecialchars((string) $producer) ?></th>
+						<td>
+							<?php if ($messages === []): ?>
+								<em>none</em>
+							<?php else: ?>
+								<?php foreach ($messages as $message): ?>
+									<pre><?= htmlspecialchars($message) ?></pre>
+								<?php endforeach ?>
+							<?php endif ?>
+						</td>
+					</tr>
+				<?php endforeach ?>
+			</tbody>
+		</table>
+	</div>
+</div>

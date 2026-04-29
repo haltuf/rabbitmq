@@ -6,6 +6,12 @@ Formát vychází z [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) a b
 
 ## [Unreleased]
 
+### Added
+
+- `Haltuf\RabbitMQ\Diagnostics\BarPanel` — Tracy bar panel zobrazující ikonu, počet odeslaných zpráv a přehled payloadů per producer.
+- `Haltuf\RabbitMQ\Producer\Producer::addOnPublishCallback()` — registrace callbacku volaného po úspěšném `basic_publish`.
+- `Haltuf\RabbitMQ\Client::getProducers()` — výpis všech producerů (používá BarPanel pro hromadnou registraci callbacků).
+
 ## [0.1.0] - 2026-04-11
 
 První veřejné vydání balíčku extrahovaného z produkční aplikace.

@@ -7,6 +7,7 @@ require __DIR__ . '/../bootstrap.php';
 use Haltuf\RabbitMQ\Connection\Connection;
 use Haltuf\RabbitMQ\Producer\Producer;
 use Haltuf\RabbitMQ\Tests\TestConfig;
+use PhpAmqpLib\Exception\AMQPExceptionInterface;
 use Tester\Assert;
 use Tester\TestCase;
 
@@ -113,6 +114,97 @@ class ProducerTest extends TestCase
 		$msg = $this->connection->getChannel()->basic_get($this->testQueue, true);
 		Assert::notNull($msg);
 		Assert::same('after-reconnect', $msg->getBody());
+	}
+
+	public function testOnPublishCallbackReceivesMessageHeadersAndRoutingKey(): void
+	{
+		$producer = new Producer($this->connection, $this->testQueue);
+
+		/** @var list<array{string, array<string, mixed>, ?string}> $captured */
+		$captured = [];
+		$producer->addOnPublishCallback(
+			function (string $message, array $headers, ?string $routingKey) use (&$captured): void {
+				$captured[] = [$message, $headers, $routingKey];
+			},
+		);
+
+		$producer->publish('payload', ['x-foo' => 'bar'], 'custom-key');
+		$this->connection->getChannel()->queue_delete('custom-key');
+
+		Assert::count(1, $captured);
+		Assert::same('payload', $captured[0][0]);
+		Assert::same(['x-foo' => 'bar'], $captured[0][1]);
+		Assert::same('custom-key', $captured[0][2]);
+	}
+
+	public function testMultipleOnPublishCallbacksAreInvokedInOrder(): void
+	{
+		$producer = new Producer($this->connection, $this->testQueue);
+		$calls = [];
+		$producer->addOnPublishCallback(function () use (&$calls): void {
+			$calls[] = 'first';
+		});
+		$producer->addOnPublishCallback(function () use (&$calls): void {
+			$calls[] = 'second';
+		});
+
+		$producer->publish('a');
+
+		Assert::same(['first', 'second'], $calls);
+	}
+
+	public function testCallbackIsNotInvokedWhenPublishThrows(): void
+	{
+		$deadConnection = new Connection(
+			host: '127.0.0.1',
+			port: 1,
+			user: 'guest',
+			password: 'guest',
+			vhost: '/',
+			heartbeat: 60,
+			timeout: 1,
+			lazy: true,
+		);
+		$producer = new Producer($deadConnection, 'irrelevant');
+
+		$invocations = 0;
+		$producer->addOnPublishCallback(function () use (&$invocations): void {
+			$invocations++;
+		});
+
+		Assert::exception(
+			static fn () => $producer->publish('payload'),
+			AMQPExceptionInterface::class,
+		);
+		Assert::same(0, $invocations);
+	}
+
+	public function testThrowingCallbackDoesNotAbortPublishAndSubsequentCallbacks(): void
+	{
+		$producer = new Producer($this->connection, $this->testQueue);
+		$reached = false;
+		$producer->addOnPublishCallback(function (): void {
+			throw new \RuntimeException('boom');
+		});
+		$producer->addOnPublishCallback(function () use (&$reached): void {
+			$reached = true;
+		});
+
+		// Suppress error_log output to stderr during the test.
+		$prev = ini_set('error_log', '/dev/null');
+		try {
+			$producer->publish('payload');
+		} finally {
+			if ($prev !== false) {
+				ini_set('error_log', $prev);
+			}
+		}
+
+		Assert::true($reached);
+
+		$msg = $this->connection->getChannel()->basic_get($this->testQueue, true);
+		Assert::notNull($msg);
+		Assert::same('payload', $msg->getBody());
 	}
 }
 

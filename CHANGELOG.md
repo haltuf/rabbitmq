@@ -6,6 +6,8 @@ Formát vychází z [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) a b
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-04-29
+
 ### Added
 
 - `Haltuf\RabbitMQ\Diagnostics\BarPanel` — Tracy bar panel zobrazující ikonu, počet odeslaných zpráv a přehled payloadů per producer.
@@ -29,5 +31,6 @@ První veřejné vydání balíčku extrahovaného z produkční aplikace.
 - Konzolové příkazy `rabbitmq:consumer`, `rabbitmq:staticConsumer`, `rabbitmq:declareQueuesAndExchanges`.
 - Integrační testy proti živému RabbitMQ serveru.
 
-[Unreleased]: https://github.com/haltuf/rabbitmq/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/haltuf/rabbitmq/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/haltuf/rabbitmq/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/haltuf/rabbitmq/releases/tag/v0.1.0

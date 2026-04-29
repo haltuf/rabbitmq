@@ -151,6 +151,34 @@ class ProducerTest extends TestCase
 
 		Assert::same(['first', 'second'], $calls);
 	}
+
+	public function testThrowingCallbackDoesNotAbortPublishAndSubsequentCallbacks(): void
+	{
+		$producer = new Producer($this->connection, $this->testQueue);
+		$reached = false;
+		$producer->addOnPublishCallback(function (): void {
+			throw new \RuntimeException('boom');
+		});
+		$producer->addOnPublishCallback(function () use (&$reached): void {
+			$reached = true;
+		});
+
+		// Suppress error_log output to stderr during the test.
+		$prev = ini_set('error_log', '/dev/null');
+		try {
+			$producer->publish('payload');
+		} finally {
+			if ($prev !== false) {
+				ini_set('error_log', $prev);
+			}
+		}
+
+		Assert::true($reached);
+
+		$msg = $this->connection->getChannel()->basic_get($this->testQueue, true);
+		Assert::notNull($msg);
+		Assert::same('payload', $msg->getBody());
+	}
 }
 
 (new ProducerTest())->run();

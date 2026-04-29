@@ -218,7 +218,7 @@ tracy:
 		- Haltuf\RabbitMQ\Diagnostics\BarPanel
 ```
 
-Maximální počet zobrazených zpráv lze upravit přes statickou property `BarPanel::$displayCount` (výchozí `100`, hodnota `0` znamená neomezeně).
+Maximální počet zobrazených zpráv lze upravit přes statickou property `BarPanel::$displayCount` (výchozí `100`, hodnota `0` znamená neomezeně). V dlouhoběžících procesech (CLI, workery) hodnotu `0` nepoužívej — pole sebraných payloadů by rostlo bez omezení.
 
 ## Migrace z `contributte/rabbitmq`
 

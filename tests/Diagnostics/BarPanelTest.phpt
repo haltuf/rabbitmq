@@ -114,7 +114,7 @@ class BarPanelTest extends TestCase
 
 		$tab = $panel->getTab();
 		Assert::contains('data:image/svg+xml;base64,', $tab);
-		Assert::contains(' 2', $tab);
+		Assert::contains('> 2</span>', $this->normalizeWhitespace($tab));
 	}
 
 	public function testGetPanelHandlesEmptyProducer(): void

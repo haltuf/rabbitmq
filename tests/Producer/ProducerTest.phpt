@@ -7,6 +7,7 @@ require __DIR__ . '/../bootstrap.php';
 use Haltuf\RabbitMQ\Connection\Connection;
 use Haltuf\RabbitMQ\Producer\Producer;
 use Haltuf\RabbitMQ\Tests\TestConfig;
+use PhpAmqpLib\Exception\AMQPExceptionInterface;
 use Tester\Assert;
 use Tester\TestCase;
 
@@ -150,6 +151,32 @@ class ProducerTest extends TestCase
 		$producer->publish('a');
 
 		Assert::same(['first', 'second'], $calls);
+	}
+
+	public function testCallbackIsNotInvokedWhenPublishThrows(): void
+	{
+		$deadConnection = new Connection(
+			host: '127.0.0.1',
+			port: 1,
+			user: 'guest',
+			password: 'guest',
+			vhost: '/',
+			heartbeat: 60,
+			timeout: 1,
+			lazy: true,
+		);
+		$producer = new Producer($deadConnection, 'irrelevant');
+
+		$invocations = 0;
+		$producer->addOnPublishCallback(function () use (&$invocations): void {
+			$invocations++;
+		});
+
+		Assert::exception(
+			static fn () => $producer->publish('payload'),
+			AMQPExceptionInterface::class,
+		);
+		Assert::same(0, $invocations);
 	}
 
 	public function testThrowingCallbackDoesNotAbortPublishAndSubsequentCallbacks(): void

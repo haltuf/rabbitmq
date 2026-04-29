@@ -10,6 +10,8 @@ final class BarPanel implements IBarPanel
 {
 	public static int $displayCount = 100;
 
+	private static ?string $iconSrc = null;
+
 	/** @var array<string, list<string>> */
 	private array $sentMessages = [];
 
@@ -33,10 +35,12 @@ final class BarPanel implements IBarPanel
 
 	public function getTab(): string
 	{
-		$icon = (string) file_get_contents(__DIR__ . '/rabbitmq-icon.svg');
-		$iconSrc = 'data:image/svg+xml;base64,' . base64_encode($icon);
+		if (self::$iconSrc === null) {
+			$icon = (string) file_get_contents(__DIR__ . '/rabbitmq-icon.svg');
+			self::$iconSrc = 'data:image/svg+xml;base64,' . base64_encode($icon);
+		}
 
-		return '<span title="RabbitMq"><img src="' . htmlspecialchars($iconSrc, ENT_QUOTES) . '" alt="">'
+		return '<span title="RabbitMq"><img src="' . htmlspecialchars(self::$iconSrc, ENT_QUOTES) . '" alt="">'
 			. ' ' . $this->totalMessages . '</span>';
 	}
 

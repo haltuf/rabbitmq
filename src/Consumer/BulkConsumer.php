@@ -36,7 +36,7 @@ class BulkConsumer extends Consumer
 	public function consume(?int $maxSeconds = null, ?int $maxMessages = null): void
 	{
 		$this->maxMessages = $maxMessages;
-		$this->messages = 0;
+		$this->resetCounters();
 		$this->buffer = [];
 		$this->stopTime = ($maxSeconds !== null && $maxSeconds > 0) ? time() + $maxSeconds : null;
 

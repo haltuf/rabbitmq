@@ -13,7 +13,16 @@ class Consumer
 	/** @var callable */
 	protected $callback;
 
+	/** @var callable|null */
+	protected $onMessage = null;
+
 	protected int $messages = 0;
+
+	protected int $acked = 0;
+
+	protected int $nacked = 0;
+
+	protected int $rejected = 0;
 
 	protected ?int $maxMessages = null;
 
@@ -28,10 +37,36 @@ class Consumer
 		$this->callback = $callback;
 	}
 
+	/** @param callable(AMQPMessage, int): void|null $observer called after every handled message with the callback result */
+	public function setMessageObserver(?callable $observer): void
+	{
+		$this->onMessage = $observer;
+	}
+
+	public function getConsumedCount(): int
+	{
+		return $this->messages;
+	}
+
+	public function getAckedCount(): int
+	{
+		return $this->acked;
+	}
+
+	public function getNackedCount(): int
+	{
+		return $this->nacked;
+	}
+
+	public function getRejectedCount(): int
+	{
+		return $this->rejected;
+	}
+
 	public function consume(?int $maxSeconds = null, ?int $maxMessages = null): void
 	{
 		$this->maxMessages = $maxMessages;
-		$this->messages = 0;
+		$this->resetCounters();
 		$channel = $this->connection->getChannel();
 
 		if ($this->prefetchSize !== null || $this->prefetchCount !== null) {
@@ -114,6 +149,16 @@ class Consumer
 			default => throw new InvalidArgumentException("Unknown return value of consumer [{$this->name}] user callback"),
 		};
 
+		match ($result) {
+			IConsumer::MESSAGE_ACK, IConsumer::MESSAGE_ACK_AND_TERMINATE => $this->acked++,
+			IConsumer::MESSAGE_NACK => $this->nacked++,
+			default => $this->rejected++,
+		};
+
+		if ($this->onMessage !== null) {
+			($this->onMessage)($amqpMessage, $result);
+		}
+
 		if ($result === IConsumer::MESSAGE_REJECT_AND_TERMINATE || $result === IConsumer::MESSAGE_ACK_AND_TERMINATE) {
 			$channel->basic_cancel($consumerTag);
 		}
@@ -126,5 +171,13 @@ class Consumer
 	protected function isMaxMessages(): bool
 	{
 		return $this->maxMessages !== null && $this->messages >= $this->maxMessages;
+	}
+
+	protected function resetCounters(): void
+	{
+		$this->messages = 0;
+		$this->acked = 0;
+		$this->nacked = 0;
+		$this->rejected = 0;
 	}
 }

@@ -10,6 +10,7 @@ use Haltuf\RabbitMQ\Consumer\IConsumer;
 use Haltuf\RabbitMQ\Consumer\Message;
 use Haltuf\RabbitMQ\Producer\Producer;
 use Haltuf\RabbitMQ\Tests\TestConfig;
+use PhpAmqpLib\Message\AMQPMessage;
 use Tester\Assert;
 use Tester\TestCase;
 
@@ -177,6 +178,59 @@ class ConsumerTest extends TestCase
 		Assert::type('bool', $receivedMsg->redelivered);
 		Assert::type('string', $receivedMsg->exchange);
 		Assert::type('string', $receivedMsg->consumerTag);
+	}
+
+	public function testCountersTrackResults(): void
+	{
+		$this->publishMessage('one');
+		$this->publishMessage('two');
+		$this->publishMessage('three');
+
+		$calls = 0;
+		$consumer = $this->createConsumer(function (Message $msg) use (&$calls): int {
+			$calls++;
+			return $calls === 2 ? IConsumer::MESSAGE_REJECT : IConsumer::MESSAGE_ACK;
+		});
+
+		$consumer->consume(maxSeconds: 3, maxMessages: 3);
+
+		Assert::same(3, $consumer->getConsumedCount());
+		Assert::same(2, $consumer->getAckedCount());
+		Assert::same(1, $consumer->getRejectedCount());
+		Assert::same(0, $consumer->getNackedCount());
+
+		// a fresh consume() run starts counting from zero again
+		$consumer->consume(maxSeconds: 1);
+		Assert::same(0, $consumer->getConsumedCount());
+		Assert::same(0, $consumer->getAckedCount());
+		Assert::same(0, $consumer->getRejectedCount());
+	}
+
+	public function testMessageObserverReceivesEveryHandledMessage(): void
+	{
+		$this->publishMessage('observed ack');
+		$this->publishMessage('observed reject');
+
+		$calls = 0;
+		$consumer = $this->createConsumer(function (Message $msg) use (&$calls): int {
+			$calls++;
+			return $calls === 2 ? IConsumer::MESSAGE_REJECT : IConsumer::MESSAGE_ACK;
+		});
+
+		$observed = [];
+		$consumer->setMessageObserver(function (AMQPMessage $message, int $result) use (&$observed): void {
+			$observed[] = [$message->getBody(), $result];
+		});
+
+		$consumer->consume(maxSeconds: 3, maxMessages: 2);
+
+		Assert::equal(
+			[
+				['observed ack', IConsumer::MESSAGE_ACK],
+				['observed reject', IConsumer::MESSAGE_REJECT],
+			],
+			$observed,
+		);
 	}
 }
 

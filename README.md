@@ -179,6 +179,25 @@ Dostupné výsledky:
 | `MESSAGE_ACK_AND_TERMINATE` | Potvrdit a ukončit consumer loop |
 | `MESSAGE_REJECT_AND_TERMINATE` | Zahodit a ukončit consumer loop |
 
+#### Sledování průběhu
+
+`Consumer` počítá výsledky aktuálního běhu a umí po každé zpracované zprávě zavolat observer:
+
+```php
+$consumer->setMessageObserver(function (AMQPMessage $message, int $result): void {
+	// $result je jedna z konstant IConsumer::MESSAGE_*
+});
+
+$consumer->consume(maxSeconds: 60);
+
+$consumer->getConsumedCount();
+$consumer->getAckedCount();
+$consumer->getNackedCount();
+$consumer->getRejectedCount();
+```
+
+Počítadla se resetují na začátku každého `consume()`. Observer i počítadla fungují stejně pro `BulkConsumer` — volají se po odbavení batche, tedy ne nutně hned po přijetí zprávy.
+
 ### BulkConsumer
 
 Pokud v configu vyplníš `bulk.size`, consumer dostává vždy pole zpráv indexované podle `deliveryTag` a musí vrátit asociativní pole `deliveryTag => status`:
@@ -205,6 +224,17 @@ Balíček registruje tři Symfony Console příkazy:
 | `rabbitmq:consumer <consumerName> [secondsToLive]` | Spustí consumer; pokud je `secondsToLive` nastaveno, běží max uvedenou dobu |
 | `rabbitmq:staticConsumer <consumerName> <amountOfMessages>` | Spustí consumer a ukončí se po zpracování daného počtu zpráv |
 | `rabbitmq:declareQueuesAndExchanges` | Deklaruje všechny fronty z configu; volá se typicky v deploy pipeline |
+
+Oba consumer příkazy vypíšou po doběhu souhrnný řádek, s `-v` navíc řádek za každou zpracovanou zprávu:
+
+```
+$ php bin/console.php rabbitmq:consumer eventConsumer 1800 -v
+[14:03:07] ack shop.created (312 B)
+[14:03:09] reject shop.created (188 B)
+Consumed 19 messages (18 acked, 0 nacked, 1 rejected) in 1800 s
+```
+
+Exit kódy: `0` = plánované doběhnutí (`secondsToLive` vypršelo, `amountOfMessages` zpracováno), `1` = běh ukončila chyba brokeru (výpadek spojení, zavřený kanál, protokolová chyba). V takovém případě se vypíše `Consumer stopped by RabbitMQ error [třída]: zpráva` a souhrn dosud zpracovaného — bez stack trace, takže restart consumeru z cronu nezaplní error log.
 
 ## Tracy bar panel
 

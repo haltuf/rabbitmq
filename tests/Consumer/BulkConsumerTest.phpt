@@ -10,6 +10,7 @@ use Haltuf\RabbitMQ\Consumer\IConsumer;
 use Haltuf\RabbitMQ\Consumer\Message;
 use Haltuf\RabbitMQ\Producer\Producer;
 use Haltuf\RabbitMQ\Tests\TestConfig;
+use PhpAmqpLib\Message\AMQPMessage;
 use Tester\Assert;
 use Tester\TestCase;
 
@@ -164,6 +165,35 @@ class BulkConsumerTest extends TestCase
 
 		$remaining = $this->connection->getChannel()->basic_get($this->testQueue, true);
 		Assert::null($remaining);
+	}
+
+	public function testCountersAndObserverTrackBulkResults(): void
+	{
+		$this->publishMessages(3);
+
+		$consumer = $this->createBulkConsumer(function (array $messages): array {
+			$result = [];
+			foreach ($messages as $msg) {
+				$data = json_decode($msg->content, true);
+				$result[$msg->deliveryTag] = $data['index'] === 1
+					? IConsumer::MESSAGE_REJECT
+					: IConsumer::MESSAGE_ACK;
+			}
+			return $result;
+		}, batchSize: 3);
+
+		$observed = [];
+		$consumer->setMessageObserver(function (AMQPMessage $message, int $result) use (&$observed): void {
+			$observed[] = $result;
+		});
+
+		$consumer->consume(maxSeconds: 5, maxMessages: 3);
+
+		Assert::same(3, $consumer->getConsumedCount());
+		Assert::same(2, $consumer->getAckedCount());
+		Assert::same(1, $consumer->getRejectedCount());
+		Assert::same(0, $consumer->getNackedCount());
+		Assert::count(3, $observed);
 	}
 }
 

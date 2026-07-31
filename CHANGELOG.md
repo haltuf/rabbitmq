@@ -14,7 +14,7 @@ Formát vychází z [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) a b
 
 ### Changed
 
-- `rabbitmq:consumer` a `rabbitmq:staticConsumer` už při výpadku spojení s brokerem nespadnou neošetřenou výjimkou (exit 255 + stack trace) — vypíší krátkou chybu a souhrn a skončí exit kódem 1.
+- `rabbitmq:consumer` a `rabbitmq:staticConsumer` už při chybě brokeru (výpadek spojení, zavřený kanál, protokolová chyba, server-side cancel consumeru) nespadnou neošetřenou výjimkou (exit 255 + stack trace) — vypíší krátkou chybu včetně třídy výjimky, souhrn dosud zpracovaného a skončí exit kódem 1.
 - Interní: společná logika obou consumer commandů vytažena do `BaseConsumerCommand`.
 
 ## [0.1.1] - 2026-04-29

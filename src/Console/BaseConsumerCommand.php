@@ -5,15 +5,14 @@ namespace Haltuf\RabbitMQ\Console;
 use Haltuf\RabbitMQ\Consumer\Consumer;
 use Haltuf\RabbitMQ\Consumer\IConsumer;
 use InvalidArgumentException;
-use PhpAmqpLib\Exception\AMQPConnectionClosedException;
-use PhpAmqpLib\Exception\AMQPIOException;
+use PhpAmqpLib\Exception\AMQPExceptionInterface;
 use PhpAmqpLib\Message\AMQPMessage;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Output\OutputInterface;
 
 abstract class BaseConsumerCommand extends Command
 {
-	private const ResultLabels = [
+	private const RESULT_LABELS = [
 		IConsumer::MESSAGE_ACK => 'ack',
 		IConsumer::MESSAGE_NACK => 'nack',
 		IConsumer::MESSAGE_REJECT => 'reject',
@@ -40,8 +39,13 @@ abstract class BaseConsumerCommand extends Command
 
 	/**
 	 * Runs the consume loop with a per-message line in verbose mode, a summary
-	 * line at the end, and a clean non-zero exit when the broker connection is
-	 * lost (instead of an unhandled exception with a full stack trace).
+	 * line at the end, and a clean non-zero exit on any broker-side failure
+	 * (instead of an unhandled exception with a full stack trace).
+	 *
+	 * A lost broker surfaces in many shapes — closed connection, closed channel,
+	 * failed write, protocol error on an ack with a stale delivery tag, server-side
+	 * consumer cancel — so the whole php-amqplib exception family is caught and the
+	 * concrete class is printed instead of a stack trace.
 	 *
 	 * @param callable(Consumer): void $consume
 	 */
@@ -54,7 +58,7 @@ abstract class BaseConsumerCommand extends Command
 				$output->writeln(sprintf(
 					'[%s] %s %s (%d B)',
 					date('H:i:s'),
-					self::ResultLabels[$result] ?? (string) $result,
+					self::RESULT_LABELS[$result] ?? (string) $result,
 					$message->getRoutingKey() ?? '',
 					strlen($message->getBody()),
 				));
@@ -66,19 +70,23 @@ abstract class BaseConsumerCommand extends Command
 
 		try {
 			$consume($consumer);
-		} catch (AMQPConnectionClosedException | AMQPIOException $e) {
-			$output->writeln(sprintf('<error>Connection to RabbitMQ lost: %s</error>', $e->getMessage()));
+		} catch (AMQPExceptionInterface $e) {
+			$output->writeln(sprintf(
+				'<error>Consumer stopped by RabbitMQ error [%s]: %s</error>',
+				$e::class,
+				$e->getMessage(),
+			));
 			$exitCode = self::FAILURE;
+		} finally {
+			$output->writeln(sprintf(
+				'Consumed %d messages (%d acked, %d nacked, %d rejected) in %d s',
+				$consumer->getConsumedCount(),
+				$consumer->getAckedCount(),
+				$consumer->getNackedCount(),
+				$consumer->getRejectedCount(),
+				time() - $start,
+			));
 		}
-
-		$output->writeln(sprintf(
-			'Consumed %d messages (%d acked, %d nacked, %d rejected) in %d s',
-			$consumer->getConsumedCount(),
-			$consumer->getAckedCount(),
-			$consumer->getNackedCount(),
-			$consumer->getRejectedCount(),
-			time() - $start,
-		));
 
 		return $exitCode;
 	}

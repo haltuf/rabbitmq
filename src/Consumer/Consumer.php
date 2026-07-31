@@ -149,11 +149,13 @@ class Consumer
 			default => throw new InvalidArgumentException("Unknown return value of consumer [{$this->name}] user callback"),
 		};
 
-		match ($result) {
-			IConsumer::MESSAGE_ACK, IConsumer::MESSAGE_ACK_AND_TERMINATE => $this->acked++,
-			IConsumer::MESSAGE_NACK => $this->nacked++,
-			default => $this->rejected++,
-		};
+		if ($result === IConsumer::MESSAGE_ACK || $result === IConsumer::MESSAGE_ACK_AND_TERMINATE) {
+			$this->acked++;
+		} elseif ($result === IConsumer::MESSAGE_NACK) {
+			$this->nacked++;
+		} else {
+			$this->rejected++;
+		}
 
 		if ($this->onMessage !== null) {
 			($this->onMessage)($amqpMessage, $result);

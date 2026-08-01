@@ -10,7 +10,6 @@ use Haltuf\RabbitMQ\Consumer\IConsumer;
 use Haltuf\RabbitMQ\Consumer\Message;
 use Haltuf\RabbitMQ\Producer\Producer;
 use Haltuf\RabbitMQ\Tests\TestConfig;
-use PhpAmqpLib\Message\AMQPMessage;
 use Tester\Assert;
 use Tester\TestCase;
 
@@ -183,7 +182,7 @@ class BulkConsumerTest extends TestCase
 		}, batchSize: 3);
 
 		$observed = [];
-		$consumer->setMessageObserver(function (AMQPMessage $message, int $result) use (&$observed): void {
+		$consumer->setMessageObserver(function (Message $message, int $result) use (&$observed): void {
 			$observed[] = $result;
 		});
 

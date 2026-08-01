@@ -184,7 +184,7 @@ Dostupné výsledky:
 `Consumer` počítá výsledky aktuálního běhu a umí po každé zpracované zprávě zavolat observer:
 
 ```php
-$consumer->setMessageObserver(function (AMQPMessage $message, int $result): void {
+$consumer->setMessageObserver(function (Message $message, int $result): void {
 	// $result je jedna z konstant IConsumer::MESSAGE_*
 });
 
@@ -234,7 +234,9 @@ $ php bin/console.php rabbitmq:consumer eventConsumer 1800 -v
 Consumed 19 messages (18 acked, 0 nacked, 1 rejected) in 1800 s
 ```
 
-Exit kódy: `0` = plánované doběhnutí (`secondsToLive` vypršelo, `amountOfMessages` zpracováno), `1` = běh ukončila chyba brokeru (výpadek spojení, zavřený kanál, protokolová chyba). V takovém případě se vypíše `Consumer stopped by RabbitMQ error [třída]: zpráva` a souhrn dosud zpracovaného — bez stack trace, takže restart consumeru z cronu nezaplní error log.
+Exit kódy: `0` = plánované doběhnutí (`secondsToLive` vypršelo, `amountOfMessages` zpracováno), `1` = běh ukončila chyba brokeru (výpadek spojení, zavřený kanál, protokolová chyba). V takovém případě jde na stderr `Consumer stopped by RabbitMQ error [třída]: zpráva`, na stdout souhrn dosud zpracovaného — bez stack trace, takže restart consumeru z cronu nezaplní error log.
+
+Výjimka z tvého consumer callbacku chybou brokeru není: probublá dál se stack tracem (exit `255`), aby se chyba v aplikačním kódu nedala přehlédnout. Souhrn se i tak vypíše.
 
 ## Tracy bar panel
 

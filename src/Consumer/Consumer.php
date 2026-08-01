@@ -37,7 +37,7 @@ class Consumer
 		$this->callback = $callback;
 	}
 
-	/** @param callable(AMQPMessage, int): void|null $observer called after every handled message with the callback result */
+	/** @param (callable(Message, int): void)|null $observer called after every handled message with the callback result */
 	public function setMessageObserver(?callable $observer): void
 	{
 		$this->onMessage = $observer;
@@ -158,7 +158,7 @@ class Consumer
 		}
 
 		if ($this->onMessage !== null) {
-			($this->onMessage)($amqpMessage, $result);
+			($this->onMessage)($this->createMessage($amqpMessage), $result);
 		}
 
 		if ($result === IConsumer::MESSAGE_REJECT_AND_TERMINATE || $result === IConsumer::MESSAGE_ACK_AND_TERMINATE) {

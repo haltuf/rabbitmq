@@ -4,10 +4,11 @@ namespace Haltuf\RabbitMQ\Console;
 
 use Haltuf\RabbitMQ\Consumer\Consumer;
 use Haltuf\RabbitMQ\Consumer\IConsumer;
+use Haltuf\RabbitMQ\Consumer\Message;
 use InvalidArgumentException;
 use PhpAmqpLib\Exception\AMQPExceptionInterface;
-use PhpAmqpLib\Message\AMQPMessage;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 abstract class BaseConsumerCommand extends Command
@@ -54,13 +55,13 @@ abstract class BaseConsumerCommand extends Command
 		$consumer = $this->consumers[$name];
 
 		if ($output->isVerbose()) {
-			$consumer->setMessageObserver(static function (AMQPMessage $message, int $result) use ($output): void {
+			$consumer->setMessageObserver(static function (Message $message, int $result) use ($output): void {
 				$output->writeln(sprintf(
 					'[%s] %s %s (%d B)',
 					date('H:i:s'),
 					self::RESULT_LABELS[$result] ?? (string) $result,
-					$message->getRoutingKey() ?? '',
-					strlen($message->getBody()),
+					$message->routingKey,
+					strlen($message->content),
 				));
 			});
 		}
@@ -71,7 +72,8 @@ abstract class BaseConsumerCommand extends Command
 		try {
 			$consume($consumer);
 		} catch (AMQPExceptionInterface $e) {
-			$output->writeln(sprintf(
+			$errorOutput = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
+			$errorOutput->writeln(sprintf(
 				'<error>Consumer stopped by RabbitMQ error [%s]: %s</error>',
 				$e::class,
 				$e->getMessage(),

@@ -8,13 +8,13 @@ Formát vychází z [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) a b
 
 ### Added
 
-- `Consumer::setMessageObserver()` — volitelný callback volaný po zpracování každé zprávy (AMQPMessage + výsledek callbacku).
+- `Consumer::setMessageObserver()` — volitelný callback volaný po zpracování každé zprávy (`Message` DTO + výsledek callbacku).
 - `Consumer` počítadla: `getConsumedCount()`, `getAckedCount()`, `getNackedCount()`, `getRejectedCount()` — resetují se na začátku každého `consume()`.
 - `rabbitmq:consumer` a `rabbitmq:staticConsumer` vypisují po doběhu souhrnný řádek (počet zpráv, ack/nack/reject, doba běhu); s `-v` navíc řádek za každou zpracovanou zprávu.
 
 ### Changed
 
-- `rabbitmq:consumer` a `rabbitmq:staticConsumer` už při chybě brokeru (výpadek spojení, zavřený kanál, protokolová chyba, server-side cancel consumeru) nespadnou neošetřenou výjimkou (exit 255 + stack trace) — vypíší krátkou chybu včetně třídy výjimky, souhrn dosud zpracovaného a skončí exit kódem 1.
+- `rabbitmq:consumer` a `rabbitmq:staticConsumer` už při chybě brokeru (výpadek spojení, zavřený kanál, protokolová chyba, server-side cancel consumeru) nespadnou neošetřenou výjimkou (exit 255 + stack trace) — vypíší na stderr krátkou chybu včetně třídy výjimky, na stdout souhrn dosud zpracovaného a skončí exit kódem 1.
 - Interní: společná logika obou consumer commandů vytažena do `BaseConsumerCommand`.
 
 ## [0.1.1] - 2026-04-29

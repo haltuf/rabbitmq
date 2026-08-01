@@ -8,6 +8,7 @@ Formát vychází z [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) a b
 
 ### Added
 
+- `Client::getConsumer()` — vrací nakonfigurovaný consumer podle jména, symetricky ke `getProducer()` (consumery nejsou autowirované, dosud se k nim šlo dostat jen přes název DI služby).
 - `Consumer::setMessageObserver()` — volitelný callback volaný po zpracování každé zprávy (`Message` DTO + výsledek callbacku).
 - `Consumer` počítadla: `getConsumedCount()`, `getAckedCount()`, `getNackedCount()`, `getRejectedCount()` — resetují se na začátku každého `consume()`.
 - `rabbitmq:consumer` a `rabbitmq:staticConsumer` vypisují po doběhu souhrnný řádek (počet zpráv, ack/nack/reject, doba běhu); s `-v` navíc řádek za každou zpracovanou zprávu.

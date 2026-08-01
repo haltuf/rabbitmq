@@ -6,6 +6,8 @@ require __DIR__ . '/bootstrap.php';
 
 use Haltuf\RabbitMQ\Client;
 use Haltuf\RabbitMQ\Connection\Connection;
+use Haltuf\RabbitMQ\Consumer\Consumer;
+use Haltuf\RabbitMQ\Consumer\IConsumer;
 use Haltuf\RabbitMQ\Producer\Producer;
 use Tester\Assert;
 use Tester\TestCase;
@@ -56,6 +58,32 @@ class ClientTest extends TestCase
 		$msg = $this->connection->getChannel()->basic_get($this->testQueue, true);
 		Assert::notNull($msg);
 		Assert::same('{"via":"client"}', $msg->getBody());
+	}
+
+	public function testGetConsumerReturnsConsumer(): void
+	{
+		$consumer = new Consumer(
+			'myConsumer',
+			$this->connection,
+			$this->testQueue,
+			static fn (): int => IConsumer::MESSAGE_ACK,
+			null,
+			null,
+		);
+		$client = new Client([], ['myConsumer' => $consumer]);
+
+		Assert::same($consumer, $client->getConsumer('myConsumer'));
+	}
+
+	public function testGetConsumerThrowsForUnknown(): void
+	{
+		$client = new Client([]);
+
+		Assert::exception(
+			fn () => $client->getConsumer('nonExistent'),
+			\InvalidArgumentException::class,
+			'Consumer [nonExistent] does not exist',
+		);
 	}
 
 	public function testMultipleProducers(): void

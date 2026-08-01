@@ -183,7 +183,15 @@ Dostupné výsledky:
 
 `Consumer` počítá výsledky aktuálního běhu a umí po každé zpracované zprávě zavolat observer.
 
-Instance consumerů nejsou autowirované — rozšíření je registruje pod názvem `<prefix>.consumer.<jméno>`, takže se do vlastní služby předávají explicitně:
+Instanci consumeru vrací `Client::getConsumer()` — symetricky ke `getProducer()`:
+
+```php
+$consumer = $this->rabbitClient->getConsumer('eventConsumer');
+```
+
+`Client` drží instance všech nakonfigurovaných consumerů, takže vzniknou spolu s ním. Pokud některý consumer používá jinou connection než producery a ta nemá `lazy: true`, naváže se spojení už při vytvoření `Client`.
+
+Consumery nejsou autowirované, takže druhá možnost je předat konkrétní službu explicitně; rozšíření je registruje pod názvem `<prefix>.consumer.<jméno>`:
 
 ```neon
 services:

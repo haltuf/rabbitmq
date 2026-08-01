@@ -188,14 +188,14 @@ final class RabbitMQExtension extends CompilerExtension
 			$producerRefs[$name] = $builder->getDefinition($this->prefix('producer.' . $name));
 		}
 
-		/** @var ServiceDefinition $clientDef */
-		$clientDef = $builder->getDefinition($this->prefix('client'));
-		$clientDef->setArguments([$producerRefs]);
-
 		$consumerRefs = [];
 		foreach (array_keys($config['consumers']) as $name) {
 			$consumerRefs[$name] = $builder->getDefinition($this->prefix('consumer.' . $name));
 		}
+
+		/** @var ServiceDefinition $clientDef */
+		$clientDef = $builder->getDefinition($this->prefix('client'));
+		$clientDef->setArguments([$producerRefs, $consumerRefs]);
 
 		/** @var ServiceDefinition $consumerCommandDef */
 		$consumerCommandDef = $builder->getDefinition($this->prefix('console.consumerCommand'));

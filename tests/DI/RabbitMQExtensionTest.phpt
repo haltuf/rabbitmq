@@ -6,6 +6,7 @@ require __DIR__ . '/../bootstrap.php';
 
 use Haltuf\RabbitMQ\Client;
 use Haltuf\RabbitMQ\Connection\ConnectionFactory;
+use Haltuf\RabbitMQ\Consumer\Consumer;
 use Haltuf\RabbitMQ\DI\RabbitMQExtension;
 use Haltuf\RabbitMQ\Producer\Producer;
 use Haltuf\RabbitMQ\Queue\QueueDeclarator;
@@ -46,6 +47,11 @@ rabbitmq:
 		testProducer:
 			queue: testQueue
 			contentType: application/json
+	consumers:
+		testConsumer:
+			queue: testQueue
+			# callback se nikdy nevolá, test consumer jen vytáhne z containeru
+			callback: strlen
 NEON;
 
 		$configFile = $tempDir . '/config.neon';
@@ -82,6 +88,25 @@ NEON;
 	{
 		$client = $this->createContainer()->getByType(Client::class);
 		Assert::type(Producer::class, $client->getProducer('testProducer'));
+	}
+
+	public function testConfiguredConsumerAvailable(): void
+	{
+		$container = $this->createContainer();
+		$client = $container->getByType(Client::class);
+
+		Assert::type(Consumer::class, $client->getConsumer('testConsumer'));
+		Assert::same($container->getService('rabbitmq.consumer.testConsumer'), $client->getConsumer('testConsumer'));
+	}
+
+	public function testMissingConsumerThrows(): void
+	{
+		$client = $this->createContainer()->getByType(Client::class);
+		Assert::exception(
+			fn () => $client->getConsumer('nonExistent'),
+			\InvalidArgumentException::class,
+			'Consumer [nonExistent] does not exist',
+		);
 	}
 
 	public function testConnectionFactoryReturnsSameInstance(): void

@@ -96,6 +96,10 @@ class ConsumerTest extends TestCase
 		$consumer->consume(maxSeconds: 3, maxMessages: 2);
 
 		Assert::same(2, $attempts);
+		Assert::same(2, $consumer->getConsumedCount());
+		Assert::same(1, $consumer->getNackedCount());
+		Assert::same(1, $consumer->getAckedCount());
+		Assert::same(0, $consumer->getRejectedCount());
 	}
 
 	public function testConsumeMultipleMessages(): void

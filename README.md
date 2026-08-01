@@ -181,7 +181,14 @@ Dostupné výsledky:
 
 #### Sledování průběhu
 
-`Consumer` počítá výsledky aktuálního běhu a umí po každé zpracované zprávě zavolat observer:
+`Consumer` počítá výsledky aktuálního běhu a umí po každé zpracované zprávě zavolat observer.
+
+Instance consumerů nejsou autowirované — rozšíření je registruje pod názvem `<prefix>.consumer.<jméno>`, takže se do vlastní služby předávají explicitně:
+
+```neon
+services:
+	- App\Monitoring\ConsumerMonitor(@rabbitmq.consumer.eventConsumer)
+```
 
 ```php
 $consumer->setMessageObserver(function (Message $message, int $result): void {
@@ -196,7 +203,7 @@ $consumer->getNackedCount();
 $consumer->getRejectedCount();
 ```
 
-Počítadla se resetují na začátku každého `consume()`. Observer i počítadla fungují stejně pro `BulkConsumer` — volají se po odbavení batche, tedy ne nutně hned po přijetí zprávy.
+Počítadla se resetují na začátku každého `consume()`. Observer i počítadla fungují stejně pro `BulkConsumer` — volají se po odbavení batche, tedy ne nutně hned po přijetí zprávy. Consumer má vždy nejvýš jeden observer; `rabbitmq:consumer -v` a `rabbitmq:staticConsumer -v` si ho nastavují samy, takže v tomto režimu aplikačního observera přepíšou.
 
 ### BulkConsumer
 
